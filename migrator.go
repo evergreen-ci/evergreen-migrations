@@ -6,7 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/evergreen-ci/migrations/migrations"
+	"github.com/evergreen-ci/evergreen-migrations/migrations"
+	"github.com/mongodb/grip"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -85,4 +86,6 @@ func main() {
 
 		return migration.Execute(ctx, client)
 	}
+
+	grip.EmergencyFatal(app.Run(os.Args))
 }

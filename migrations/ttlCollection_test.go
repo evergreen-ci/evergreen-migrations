@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evergreen-ci/migrations/migrations/testdata"
+	"github.com/evergreen-ci/evergreen-migrations/migrations/testdata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"

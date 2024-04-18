@@ -1,4 +1,4 @@
-module github.com/evergreen-ci/migrations
+module github.com/evergreen-ci/evergreen-migrations
 
 go 1.21.0
 
