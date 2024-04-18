@@ -80,6 +80,9 @@ func TestGetNextTTL(t *testing.T) {
 	}
 }
 
+// TestExecute is an e2e test of the migration. It runs approximately two minutes.
+// You can follow along its progress in a mongo shell by running db.tasks.getIndexes()
+// to see the TTL on the create_time field and db.tasks.find() to see the remaining tasks.
 func TestExecute(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -20,6 +20,7 @@ const (
 	scriptFlag     = "script"
 	collectionFlag = "collection"
 	batchSizeFlag  = "batch-size"
+	skipDBAuthFlag = "skip-db-auth"
 
 	awsAuthMechanism        = "MONGODB-AWS"
 	mongoExternalAuthSource = "$external"
@@ -54,6 +55,10 @@ func main() {
 			Name:  batchSizeFlag,
 			Usage: "Batch size for the script to process at once",
 		},
+		cli.BoolFlag{
+			Name:  skipDBAuthFlag,
+			Usage: "Connect to the database without authorization, for local testing",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -66,10 +71,13 @@ func main() {
 			cancel()
 		}()
 
-		clientOps := options.Client().ApplyURI(c.String(urlFlag)).SetAuth(options.Credential{
-			AuthMechanism: awsAuthMechanism,
-			AuthSource:    mongoExternalAuthSource,
-		})
+		clientOps := options.Client().ApplyURI(c.String(urlFlag))
+		if !c.Bool(skipDBAuthFlag) {
+			clientOps.SetAuth(options.Credential{
+				AuthMechanism: awsAuthMechanism,
+				AuthSource:    mongoExternalAuthSource,
+			})
+		}
 		client, err := mongo.Connect(ctx, clientOps)
 		if err != nil {
 			return errors.Wrap(err, "getting mongo client")

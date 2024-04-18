@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	name         = "ttlCollection"
-	ttlWaitSleep = 10 * time.Second
+	name             = "ttlCollection"
+	ttlWaitSleep     = 10 * time.Second
+	defaultBatchSize = 1000000
 
 	goalTTLEnvVar      = "GOAL_TTL"
 	ttlDecrementEnvVar = "TTL_DECREMENT"
@@ -40,6 +41,10 @@ func NewTTLCollection(opts MigrationOptions) (Migration, error) {
 
 	if opts.Collection == "" {
 		catcher.Add(errors.New("collection name not specified"))
+	}
+
+	if opts.BatchSize == 0 {
+		opts.BatchSize = defaultBatchSize
 	}
 
 	var err error
