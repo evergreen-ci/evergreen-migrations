@@ -8,11 +8,14 @@ Invoke the migration from [Argo Workflows](https://kanopy.corp.mongodb.com/docs/
 
 ## Parameters
 Common options are set on the command line. These include
-* `--url` (required): the URL to connect to the database (e.g. mongodb://localhost:27017)
-* `--db` (required): the database your script will run against (e.g. mci)
+* `--url` (required): URL to connect to the database (e.g. mongodb://localhost:27017)
+* `--db` (required): database your script will run against (e.g. mci)
 * `--batch-size` (optional): number of documents to process at once
+* `--collection` (optional): collection to run the script against
 
-The values of these options are passed to your script in a `MigrationOptions`. Any additional arguments your script requires can be passed through the environment.
+The values of these options are passed to your script in a `MigrationOptions`. Your script has the option to use the optional parameters when they are provided, but isn't required to. Since they're optional, it's advisable to default to something sensible when they aren't provided.
+
+Any additional arguments your script requires can be passed through the environment.
 
 Two additional parameters
 * `--script` (required) the name of the script to run
@@ -25,6 +28,10 @@ func init() {
 	Registry.registerMigration("cool-migration", NewCoolMigration)
 }
 ```
+
+### Expectations
+* Because the script may be interrupted and restarted, your script should be idempotent
+* The script must exit when it's complete
 
 ## Running a migration
 ### Local Testing
