@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	name             = "ttlCollection"
+	ttlMigrationName = "ttlCollection"
 	ttlWaitSleep     = 10 * time.Second
 	defaultBatchSize = 1000000
 
@@ -23,7 +23,7 @@ const (
 )
 
 func init() {
-	Registry.registerMigration(name, NewTTLCollection)
+	Registry.registerMigration(ttlMigrationName, NewTTLCollection)
 }
 
 type TTLCollection struct {
@@ -40,7 +40,7 @@ func NewTTLCollection(opts MigrationOptions) (Migration, error) {
 	catcher.Add(errors.Wrap(opts.validate(), "invalid options"))
 
 	if opts.Collection == "" {
-		catcher.Add(errors.New("collection name not specified"))
+		catcher.Add(errors.New("collection ttlMigrationName not specified"))
 	}
 
 	if opts.BatchSize == 0 {
