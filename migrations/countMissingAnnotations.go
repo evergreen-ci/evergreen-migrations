@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
+
 	"github.com/evergreen-ci/evergreen"
 	"github.com/evergreen-ci/evergreen/model/annotations"
 	"github.com/evergreen-ci/evergreen/model/task"
@@ -17,11 +17,11 @@ import (
 )
 
 const (
-	missingAnnotationCount = "countMissingAnnotations"
+	missingAnnotationCountName = "countMissingAnnotations"
 )
 
 func init() {
-	Registry.registerMigration(missingAnnotationCount, NewCountMissingAnnotations)
+	Registry.registerMigration(missingAnnotationCountName, NewCountMissingAnnotations)
 }
 
 type CountMissingAnnotations struct {
