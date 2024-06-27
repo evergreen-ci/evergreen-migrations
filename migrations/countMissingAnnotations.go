@@ -9,6 +9,7 @@ import (
 	"github.com/mongodb/anser/bsonutil"
 	"github.com/mongodb/grip"
 	"github.com/pkg/errors"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,6 +43,7 @@ func NewCountMissingAnnotations(opts MigrationOptions) (Migration, error) {
 }
 
 func (c *CountMissingAnnotations) Execute(ctx context.Context, client *mongo.Client) error {
+	timeToCheck := time.Now().AddDate(0, 0, -30)
 	query := bson.M{
 		"$match": bson.M{
 			task.ProjectKey:   "mongodb-mongo-v8.0",
@@ -49,7 +51,7 @@ func (c *CountMissingAnnotations) Execute(ctx context.Context, client *mongo.Cli
 			task.StatusKey:    evergreen.TaskFailed,
 			bsonutil.GetDottedKeyName(task.DetailsKey, task.TaskEndDetailType): evergreen.CommandTypeTest,
 			task.HasAnnotationsKey: false,
-			task.CreateTimeKey:     bson.M{"$gte": "2024-05-24T00:00:00.000Z"},
+			task.CreateTimeKey:     bson.M{"$gte": timeToCheck},
 		},
 	}
 
@@ -62,7 +64,7 @@ func (c *CountMissingAnnotations) Execute(ctx context.Context, client *mongo.Cli
 	if err != nil {
 		return errors.Wrap(err, "reading cursor")
 	}
-	fmt.Printf("Found %d  task(s) to check.\n", len(tasksToCheck))
+	fmt.Printf("Found %d  task(s) to check since '%s' (last 30 days).\n", len(tasksToCheck), timeToCheck.String())
 
 	taskIdsWithoutAnnotations := []string{}
 	for _, t := range tasksToCheck {
