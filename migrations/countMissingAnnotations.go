@@ -32,7 +32,7 @@ func NewCountMissingAnnotations(opts MigrationOptions) (Migration, error) {
 	catcher.Add(errors.Wrap(opts.validate(), "invalid options"))
 
 	if opts.Collection == "" {
-		catcher.Add(errors.New("collection ttlMigrationName not specified"))
+		catcher.Add(errors.New("collection name not specified"))
 	}
 
 	return &CountMissingAnnotations{

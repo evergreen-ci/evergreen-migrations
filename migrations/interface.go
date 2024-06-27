@@ -24,7 +24,7 @@ func (m *migrationRegistry) registerMigration(name string, factory MigrationFact
 func (m *migrationRegistry) Migration(name string, opts MigrationOptions) (Migration, error) {
 	migrationFactory, ok := m.migrations[name]
 	if !ok {
-		return nil, errors.Errorf("no migration exists for ttlMigrationName '%s'", name)
+		return nil, errors.Errorf("no migration exists for name '%s'", name)
 	}
 	return migrationFactory(opts)
 }
@@ -44,7 +44,7 @@ type MigrationOptions struct {
 func (m *MigrationOptions) validate() error {
 	catcher := grip.NewBasicCatcher()
 	if m.Database == "" {
-		catcher.Add(errors.New("database ttlMigrationName not specified"))
+		catcher.Add(errors.New("database name not specified"))
 	}
 
 	return catcher.Resolve()
