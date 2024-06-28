@@ -136,8 +136,8 @@ func TestNewTTLCollection(t *testing.T) {
 		t.Setenv(ttlFieldEnvVar, "tasks")
 		_, err := NewTTLCollection(MigrationOptions{})
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "database ttlMigrationName not specified")
-		assert.Contains(t, err.Error(), "collection ttlMigrationName not specified")
+		assert.Contains(t, err.Error(), "database name not specified")
+		assert.Contains(t, err.Error(), "collection name not specified")
 	})
 
 	t.Run("NoEnvironmentVariables", func(t *testing.T) {
