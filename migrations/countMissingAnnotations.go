@@ -68,15 +68,20 @@ func (c *CountMissingAnnotations) Execute(ctx context.Context, client *mongo.Cli
 	fmt.Printf("Found %d  task(s) to check since '%s' (last 30 days).\n", len(tasksToCheck), timeToCheck.String())
 
 	taskIdsWithoutAnnotations := []string{}
-	for _, t := range tasksToCheck {
+	for cursor.TryNext(ctx) {
+		currentTask := &task.Task{}
+		err := cursor.Decode(currentTask)
+		if err != nil {
+			return errors.Wrap(err, "decoding task")
+		}
 		query := bson.M{
-			annotations.TaskIdKey:        t.Id,
-			annotations.TaskExecutionKey: t.Execution,
+			annotations.TaskIdKey:        currentTask.Id,
+			annotations.TaskExecutionKey: currentTask.Execution,
 		}
 
 		res := client.Database(c.database).Collection(annotations.Collection).FindOne(ctx, query)
 		if res.Err() != nil && res.Err() == mongo.ErrNoDocuments {
-			taskIdsWithoutAnnotations = append(taskIdsWithoutAnnotations, t.Id)
+			taskIdsWithoutAnnotations = append(taskIdsWithoutAnnotations, currentTask.Id)
 		}
 	}
 
