@@ -55,12 +55,6 @@ func (c *CountMissingAnnotations) Execute(ctx context.Context, client *mongo.Cli
 	if err != nil {
 		return errors.Wrap(err, "aggregating tasks")
 	}
-	tasksToCheck := []task.Task{}
-	err = cursor.All(ctx, &tasksToCheck)
-	if err != nil {
-		return errors.Wrap(err, "reading cursor")
-	}
-	fmt.Printf("Found %d  task(s) to check since '%s' (last 30 days).\n", len(tasksToCheck), timeToCheck.String())
 
 	taskIdsWithoutAnnotations := []string{}
 	for cursor.TryNext(ctx) {
