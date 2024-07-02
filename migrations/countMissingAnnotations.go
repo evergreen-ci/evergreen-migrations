@@ -33,13 +33,8 @@ func NewCountMissingAnnotations(opts MigrationOptions) (Migration, error) {
 	catcher := grip.NewBasicCatcher()
 	catcher.Add(errors.Wrap(opts.validate(), "invalid options"))
 
-	if opts.Collection == "" {
-		catcher.Add(errors.New("collection name not specified"))
-	}
-
 	return &CountMissingAnnotations{
-		database:   opts.Database,
-		collection: opts.Collection,
+		database: opts.Database,
 	}, catcher.Resolve()
 }
 
