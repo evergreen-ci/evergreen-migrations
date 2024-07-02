@@ -41,19 +41,17 @@ func NewCountMissingAnnotations(opts MigrationOptions) (Migration, error) {
 func (c *CountMissingAnnotations) Execute(ctx context.Context, client *mongo.Client) error {
 	timeToCheck := time.Now().AddDate(0, 0, -30)
 	query := bson.M{
-		"$match": bson.M{
-			task.ProjectKey:   "mongodb-mongo-v8.0",
-			task.RequesterKey: evergreen.RepotrackerVersionRequester,
-			task.StatusKey:    evergreen.TaskFailed,
-			bsonutil.GetDottedKeyName(task.DetailsKey, task.TaskEndDetailType): evergreen.CommandTypeTest,
-			task.HasAnnotationsKey: false,
-			task.CreateTimeKey:     bson.M{"$gte": timeToCheck},
-		},
+		task.ProjectKey:   "mongodb-mongo-v8.0",
+		task.RequesterKey: evergreen.RepotrackerVersionRequester,
+		task.StatusKey:    evergreen.TaskFailed,
+		bsonutil.GetDottedKeyName(task.DetailsKey, task.TaskEndDetailType): evergreen.CommandTypeTest,
+		task.HasAnnotationsKey: false,
+		task.CreateTimeKey:     bson.M{"$gte": timeToCheck},
 	}
 
 	cursor, err := client.Database(c.database).Collection(task.Collection).Find(ctx, query)
 	if err != nil {
-		return errors.Wrap(err, "aggregating tasks")
+		return errors.Wrap(err, "finding tasks")
 	}
 
 	taskIdsWithoutAnnotations := []string{}
