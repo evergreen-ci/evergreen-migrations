@@ -86,7 +86,7 @@ func (c *redactProjectEventSecrets) Execute(ctx context.Context, client *mongo.C
 		findOpts := options.Find().SetSort(bson.M{"_id": 1}).SetProjection(bson.M{"_id": 1})
 		cur, err := client.Database(c.database).Collection(collInfo.name).Find(ctx, q, findOpts)
 		if err != nil {
-			return errors.Wrap(err, "finding project refs")
+			return errors.Wrapf(err, "finding project refs in collection '%s'", collInfo.name)
 		}
 
 		for cur.Next(ctx) {
@@ -148,6 +148,9 @@ func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client
 
 		eventData, ok := e.Data.(*model.ProjectChangeEvent)
 		if !ok {
+			continue
+		}
+		if eventData == nil {
 			continue
 		}
 
