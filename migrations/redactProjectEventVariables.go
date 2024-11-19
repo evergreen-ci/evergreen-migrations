@@ -134,17 +134,14 @@ func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client
 	}
 
 	for cur.Next(ctx) {
-		var e event.EventLogEntry
+		var e model.ProjectChangeEventEntry
 		if err := cur.Decode(&e); err != nil {
 			return errors.Wrap(err, "decoding event")
 		}
 
 		// Redact the project secrets from the event.
-		changeEvent := model.ProjectChangeEventEntry{
-			EventLogEntry: e,
-		}
-		changeEvents := model.ProjectChangeEvents{changeEvent}
-		changeEvents.RedactSecrets()
+		changeEvent := model.ProjectChangeEvents{e}
+		changeEvent.RedactSecrets()
 
 		eventData, ok := e.Data.(*model.ProjectChangeEvent)
 		if !ok {
