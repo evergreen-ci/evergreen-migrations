@@ -24,6 +24,8 @@ const (
 	startAtRepoIDEnvVar    = "START_AT_REPO_ID"
 	// Limit how many projects can be processed by the job.
 	projectLimitEnvVar = "PROJECT_LIMIT"
+	// Limit how many events can be processed for a single project.
+	eventLimitEnvVar = "EVENT_LIMIT"
 )
 
 var (
@@ -74,6 +76,15 @@ func (c *redactProjectEventSecrets) Execute(ctx context.Context, client *mongo.C
 		}
 	}
 
+	var eventLimit int
+	if eventLimitStr := os.Getenv(eventLimitEnvVar); eventLimitStr != "" {
+		var err error
+		eventLimit, err = strconv.Atoi(eventLimitStr)
+		if err != nil {
+			return errors.Wrapf(err, "parsing event limit '%s' from env var '%s'", eventLimitStr, eventLimitEnvVar)
+		}
+	}
+
 	numProjectsProcessed := 0
 	for _, collInfo := range collInfos {
 		q := bson.M{}
@@ -84,6 +95,9 @@ func (c *redactProjectEventSecrets) Execute(ctx context.Context, client *mongo.C
 		// Sort by _id to iterate in a predictable order. This makes it easier to
 		// resume from a specific project if the migration fails partway through.
 		findOpts := options.Find().SetSort(bson.M{"_id": 1}).SetProjection(bson.M{"_id": 1})
+		if projectLimit > 0 {
+			findOpts.SetLimit(int64(projectLimit - numProjectsProcessed))
+		}
 		cur, err := client.Database(c.database).Collection(collInfo.name).Find(ctx, q, findOpts)
 		if err != nil {
 			return errors.Wrapf(err, "finding project refs in collection '%s'", collInfo.name)
@@ -103,7 +117,7 @@ func (c *redactProjectEventSecrets) Execute(ctx context.Context, client *mongo.C
 			if projectID == "" {
 				return errors.New("project ID is empty")
 			}
-			if err := c.redactForProject(ctx, client, projectID); err != nil {
+			if err := c.redactForProject(ctx, client, projectID, eventLimit); err != nil {
 				return errors.Wrapf(err, "redacting project vars from events for project '%s'", projectID)
 			}
 
@@ -118,7 +132,7 @@ func (c *redactProjectEventSecrets) Execute(ctx context.Context, client *mongo.C
 	return nil
 }
 
-func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client *mongo.Client, projectID string) error {
+func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client *mongo.Client, projectID string, eventLimit int) error {
 	grip.Infof("Redacting project vars from events for project: %s\n", projectID)
 
 	projModificationEventsQuery := bson.M{
@@ -128,6 +142,9 @@ func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client
 	}
 
 	findOpts := options.Find().SetSort(bson.M{event.TimestampKey: 1})
+	if eventLimit > 0 {
+		findOpts.SetLimit(int64(eventLimit))
+	}
 	cur, err := client.Database(c.database).Collection(event.EventCollection).Find(ctx, projModificationEventsQuery, findOpts)
 	if err != nil {
 		return errors.Wrap(err, "finding project modification events")
