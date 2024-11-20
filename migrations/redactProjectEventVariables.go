@@ -153,10 +153,10 @@ func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client
 
 		setFields := bson.M{}
 		if len(eventData.Before.Vars.Vars) > 0 {
-			setFields["data.before.vars.vars"] = eventData.Before.Vars
+			setFields["data.before.vars.vars"] = eventData.Before.Vars.Vars
 		}
 		if len(eventData.After.Vars.Vars) > 0 {
-			setFields["data.after.vars.vars"] = eventData.After.Vars
+			setFields["data.after.vars.vars"] = eventData.After.Vars.Vars
 		}
 		if len(eventData.Before.GitHubAppAuth.PrivateKey) > 0 {
 			setFields["data.before.github_app_auth.private_key"] = eventData.Before.GitHubAppAuth.PrivateKey
