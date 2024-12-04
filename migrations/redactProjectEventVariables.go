@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"strconv"
@@ -156,6 +157,13 @@ func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client
 			return errors.Wrap(err, "decoding event")
 		}
 
+		originalEventData := e.Data.(*model.ProjectChangeEvent)
+		if originalEventData == nil {
+			continue
+		}
+		beforeGitHubAppAuth := originalEventData.Before.GitHubAppAuth.PrivateKey
+		afterGitHubAppAuth := originalEventData.After.GitHubAppAuth.PrivateKey
+
 		// Redact the project secrets from the event.
 		changeEvent := model.ProjectChangeEvents{e}
 		changeEvent.RedactSecrets()
@@ -175,10 +183,10 @@ func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client
 		if len(eventData.After.Vars.Vars) > 0 {
 			setFields["data.after.vars.vars"] = eventData.After.Vars.Vars
 		}
-		if len(eventData.Before.GitHubAppAuth.PrivateKey) > 0 {
+		if !bytes.Equal(eventData.Before.GitHubAppAuth.PrivateKey, beforeGitHubAppAuth) {
 			setFields["data.before.github_app_auth.private_key"] = eventData.Before.GitHubAppAuth.PrivateKey
 		}
-		if len(eventData.After.GitHubAppAuth.PrivateKey) > 0 {
+		if !bytes.Equal(eventData.After.GitHubAppAuth.PrivateKey, afterGitHubAppAuth) {
 			setFields["data.after.github_app_auth.private_key"] = eventData.After.GitHubAppAuth.PrivateKey
 		}
 		if len(setFields) == 0 {
