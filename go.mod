@@ -1,6 +1,6 @@
 module github.com/evergreen-ci/evergreen-migrations
 
-go 1.21.0
+go 1.24
 
 require (
 	github.com/evergreen-ci/evergreen v0.0.0-20241118170424-86445d84a490
