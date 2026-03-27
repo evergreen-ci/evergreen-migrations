@@ -16,11 +16,6 @@ import (
 
 const (
 	redactWebhookEventSecretsName = "redactWebhookEventSecrets"
-
-	startAtWebhookProjectIDEnvVar = "START_AT_PROJECT_ID"
-	startAtWebhookRepoIDEnvVar    = "START_AT_REPO_ID"
-	webhookProjectLimitEnvVar     = "PROJECT_LIMIT"
-	webhookEventLimitEnvVar       = "EVENT_LIMIT"
 )
 
 func init() {
@@ -48,29 +43,29 @@ func (c *redactWebhookEventSecrets) Execute(ctx context.Context, client *mongo.C
 	}{
 		{
 			name:      "project_ref",
-			startAtID: os.Getenv(startAtWebhookProjectIDEnvVar),
+			startAtID: os.Getenv(startAtProjectIDEnvVar),
 		},
 		{
 			name:      "repo_ref",
-			startAtID: os.Getenv(startAtWebhookRepoIDEnvVar),
+			startAtID: os.Getenv(startAtRepoIDEnvVar),
 		},
 	}
 
 	var projectLimit int
-	if projectLimitStr := os.Getenv(webhookProjectLimitEnvVar); projectLimitStr != "" {
+	if projectLimitStr := os.Getenv(projectLimitEnvVar); projectLimitStr != "" {
 		var err error
 		projectLimit, err = strconv.Atoi(projectLimitStr)
 		if err != nil {
-			return errors.Wrapf(err, "parsing project limit '%s' from env var '%s'", projectLimitStr, webhookProjectLimitEnvVar)
+			return errors.Wrapf(err, "parsing project limit '%s' from env var '%s'", projectLimitStr, projectLimitEnvVar)
 		}
 	}
 
 	var eventLimit int
-	if eventLimitStr := os.Getenv(webhookEventLimitEnvVar); eventLimitStr != "" {
+	if eventLimitStr := os.Getenv(eventLimitEnvVar); eventLimitStr != "" {
 		var err error
 		eventLimit, err = strconv.Atoi(eventLimitStr)
 		if err != nil {
-			return errors.Wrapf(err, "parsing event limit '%s' from env var '%s'", eventLimitStr, webhookEventLimitEnvVar)
+			return errors.Wrapf(err, "parsing event limit '%s' from env var '%s'", eventLimitStr, eventLimitEnvVar)
 		}
 	}
 
@@ -81,6 +76,8 @@ func (c *redactWebhookEventSecrets) Execute(ctx context.Context, client *mongo.C
 			q["_id"] = bson.M{"$gte": collInfo.startAtID}
 			grip.Infof("Starting at project '%s' in collection '%s'\n", collInfo.startAtID, collInfo.name)
 		}
+		// Sort by _id to iterate in a predictable order. This makes it easier to
+		// resume from a specific project if the migration fails partway through.
 		findOpts := options.Find().SetSort(bson.M{"_id": 1}).SetProjection(bson.M{"_id": 1})
 		if projectLimit > 0 {
 			findOpts.SetLimit(int64(projectLimit - numProjectsProcessed))
@@ -137,7 +134,10 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 		return errors.Wrap(err, "finding project modification events")
 	}
 
+	numEventsFound := 0
+	numEventsUpdated := 0
 	for cur.Next(ctx) {
+		numEventsFound++
 		var e model.ProjectChangeEventEntry
 		if err := cur.Decode(&e); err != nil {
 			return errors.Wrap(err, "decoding event")
@@ -148,7 +148,8 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 			continue
 		}
 
-		if len(eventData.Before.Subscriptions) == 0 && len(eventData.After.Subscriptions) == 0 {
+		// Skip events that have no webhook secrets to redact.
+		if !hasWebhookSecretsToRedact(eventData.Before.Subscriptions) && !hasWebhookSecretsToRedact(eventData.After.Subscriptions) {
 			continue
 		}
 
@@ -164,10 +165,28 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 			}}); err != nil {
 			return errors.Wrapf(err, "updating event '%s' with redacted webhook secrets", e.ID)
 		}
+		numEventsUpdated++
 	}
 	if err := cur.Err(); err != nil {
 		return errors.Wrap(err, "iterating over project modification events")
 	}
 
+	grip.Infof("Finished redacting webhook secrets for project '%s': found %d events, updated %d events.\n", projectID, numEventsFound, numEventsUpdated)
+
 	return nil
+}
+
+// hasWebhookSecretsToRedact returns true if any of the given subscriptions are
+// webhook type and have a non-empty secret that needs to be redacted.
+func hasWebhookSecretsToRedact(subscriptions []event.Subscription) bool {
+	for _, sub := range subscriptions {
+		if sub.Subscriber.Type != event.EvergreenWebhookSubscriberType {
+			continue
+		}
+		webhookSub, ok := sub.Subscriber.Target.(*event.WebhookSubscriber)
+		if ok && webhookSub != nil && len(webhookSub.Secret) > 0 {
+			return true
+		}
+	}
+	return false
 }
