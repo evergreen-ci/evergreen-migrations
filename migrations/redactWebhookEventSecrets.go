@@ -177,14 +177,14 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 }
 
 // hasWebhookSecretsToRedact returns true if any of the given subscriptions are
-// webhook type and have a non-empty secret that needs to be redacted.
+// webhook type and have a non-empty secret or Authorization header that needs to be redacted.
 func hasWebhookSecretsToRedact(subscriptions []event.Subscription) bool {
 	for _, sub := range subscriptions {
 		if sub.Subscriber.Type != event.EvergreenWebhookSubscriberType {
 			continue
 		}
 		webhookSub, ok := sub.Subscriber.Target.(*event.WebhookSubscriber)
-		if ok && webhookSub != nil && len(webhookSub.Secret) > 0 {
+		if ok && webhookSub != nil && (len(webhookSub.Secret) > 0 || webhookSub.GetHeader("Authorization") != "") {
 			return true
 		}
 	}
