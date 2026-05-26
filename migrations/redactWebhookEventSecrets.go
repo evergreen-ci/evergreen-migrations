@@ -153,9 +153,8 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 			continue
 		}
 
-		// RedactSecrets handles redaction of webhook secrets and Authorization headers.
-		changeEvent := model.ProjectChangeEvents{e}
-		changeEvent.RedactSecrets()
+		redactWebhookSecretsFromSubscriptions(eventData.Before.Subscriptions)
+		redactWebhookSecretsFromSubscriptions(eventData.After.Subscriptions)
 
 		if _, err := client.Database(c.database).Collection(event.EventCollection).UpdateOne(ctx,
 			bson.M{eventIDKey: e.ID},
@@ -174,6 +173,28 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 	grip.Infof("Finished redacting webhook secrets for project '%s': found %d events, updated %d events.\n", projectID, numEventsFound, numEventsUpdated)
 
 	return nil
+}
+
+// redactWebhookSecretsFromSubscriptions zeroes out the secret and removes the
+// Authorization header from all webhook subscriptions in the slice.
+func redactWebhookSecretsFromSubscriptions(subscriptions []event.Subscription) {
+	for i := range subscriptions {
+		if subscriptions[i].Subscriber.Type != event.EvergreenWebhookSubscriberType {
+			continue
+		}
+		webhookSub, ok := subscriptions[i].Subscriber.Target.(*event.WebhookSubscriber)
+		if !ok || webhookSub == nil {
+			continue
+		}
+		webhookSub.Secret = nil
+		filtered := make([]event.WebhookHeader, 0, len(webhookSub.Headers))
+		for _, h := range webhookSub.Headers {
+			if h.Key != "Authorization" {
+				filtered = append(filtered, h)
+			}
+		}
+		webhookSub.Headers = filtered
+	}
 }
 
 // hasWebhookSecretsToRedact returns true if any of the given subscriptions are
