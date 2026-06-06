@@ -2,8 +2,6 @@ package migrations
 
 import (
 	"context"
-	"os"
-	"strconv"
 
 	"github.com/evergreen-ci/evergreen/model"
 	"github.com/evergreen-ci/evergreen/model/event"
@@ -37,83 +35,12 @@ func newRedactWebhookEventSecrets(opts MigrationOptions) (Migration, error) {
 }
 
 func (c *redactWebhookEventSecrets) Execute(ctx context.Context, client *mongo.Client) error {
-	collInfos := []struct {
-		name      string
-		startAtID string
-	}{
-		{
-			name:      "project_ref",
-			startAtID: os.Getenv(startAtProjectIDEnvVar),
-		},
-		{
-			name:      "repo_ref",
-			startAtID: os.Getenv(startAtRepoIDEnvVar),
-		},
-	}
-
-	var projectLimit int
-	if projectLimitStr := os.Getenv(projectLimitEnvVar); projectLimitStr != "" {
-		var err error
-		projectLimit, err = strconv.Atoi(projectLimitStr)
-		if err != nil {
-			return errors.Wrapf(err, "parsing project limit '%s' from env var '%s'", projectLimitStr, projectLimitEnvVar)
+	return forEachProject(ctx, client, c.database, func(projectID string, eventLimit int) error {
+		if err := c.redactWebhookSecretsForProject(ctx, client, projectID, eventLimit); err != nil {
+			return errors.Wrapf(err, "redacting webhook secrets from events for project '%s'", projectID)
 		}
-	}
-
-	var eventLimit int
-	if eventLimitStr := os.Getenv(eventLimitEnvVar); eventLimitStr != "" {
-		var err error
-		eventLimit, err = strconv.Atoi(eventLimitStr)
-		if err != nil {
-			return errors.Wrapf(err, "parsing event limit '%s' from env var '%s'", eventLimitStr, eventLimitEnvVar)
-		}
-	}
-
-	numProjectsProcessed := 0
-	for _, collInfo := range collInfos {
-		q := bson.M{}
-		if collInfo.startAtID != "" {
-			q["_id"] = bson.M{"$gte": collInfo.startAtID}
-			grip.Infof("Starting at project '%s' in collection '%s'\n", collInfo.startAtID, collInfo.name)
-		}
-		// Sort by _id to iterate in a predictable order. This makes it easier to
-		// resume from a specific project if the migration fails partway through.
-		findOpts := options.Find().SetSort(bson.M{"_id": 1}).SetProjection(bson.M{"_id": 1})
-		if projectLimit > 0 {
-			findOpts.SetLimit(int64(projectLimit - numProjectsProcessed))
-		}
-		cur, err := client.Database(c.database).Collection(collInfo.name).Find(ctx, q, findOpts)
-		if err != nil {
-			return errors.Wrapf(err, "finding project refs in collection '%s'", collInfo.name)
-		}
-
-		for cur.Next(ctx) {
-			if projectLimit > 0 && numProjectsProcessed >= projectLimit {
-				grip.Infof("Reached limit of %d projects to process, stopping job execution.\n", projectLimit)
-				return nil
-			}
-
-			var pRef model.ProjectRef
-			if err := cur.Decode(&pRef); err != nil {
-				return errors.Wrap(err, "decoding project ref")
-			}
-			projectID := pRef.Id
-			if projectID == "" {
-				return errors.New("project ID is empty")
-			}
-			if err := c.redactWebhookSecretsForProject(ctx, client, projectID, eventLimit); err != nil {
-				return errors.Wrapf(err, "redacting webhook secrets from events for project '%s'", projectID)
-			}
-
-			numProjectsProcessed++
-		}
-
-		if err := cur.Err(); err != nil {
-			return errors.Wrap(err, "iterating over project refs")
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.Context, client *mongo.Client, projectID string, eventLimit int) error {
@@ -156,15 +83,18 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 		redactWebhookSecretsFromSubscriptions(eventData.Before.Subscriptions)
 		redactWebhookSecretsFromSubscriptions(eventData.After.Subscriptions)
 
-		if _, err := client.Database(c.database).Collection(event.EventCollection).UpdateOne(ctx,
+		result, err := client.Database(c.database).Collection(event.EventCollection).UpdateOne(ctx,
 			bson.M{eventIDKey: e.ID},
 			bson.M{"$set": bson.M{
 				"data.before.subscriptions": eventData.Before.Subscriptions,
 				"data.after.subscriptions":  eventData.After.Subscriptions,
-			}}); err != nil {
+			}})
+		if err != nil {
 			return errors.Wrapf(err, "updating event '%s' with redacted webhook secrets", e.ID)
 		}
-		numEventsUpdated++
+		if result.ModifiedCount > 0 {
+			numEventsUpdated++
+		}
 	}
 	if err := cur.Err(); err != nil {
 		return errors.Wrap(err, "iterating over project modification events")
