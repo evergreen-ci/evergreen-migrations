@@ -62,7 +62,7 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 	}
 
 	numEventsFound := 0
-	numEventsUpdated := 0
+	var numEventsUpdated int64
 	for cur.Next(ctx) {
 		numEventsFound++
 		var e model.ProjectChangeEventEntry
@@ -92,9 +92,7 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 		if err != nil {
 			return errors.Wrapf(err, "updating event '%s' with redacted webhook secrets", e.ID)
 		}
-		if result.ModifiedCount > 0 {
-			numEventsUpdated++
-		}
+		numEventsUpdated += result.ModifiedCount
 	}
 	if err := cur.Err(); err != nil {
 		return errors.Wrap(err, "iterating over project modification events")
