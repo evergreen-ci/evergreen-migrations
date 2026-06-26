@@ -95,5 +95,5 @@ func main() {
 		return migration.Execute(ctx, client)
 	}
 
-	grip.EmergencyFatal(app.Run(os.Args))
+	grip.EmergencyFatal(context.Background(), app.Run(os.Args))
 }

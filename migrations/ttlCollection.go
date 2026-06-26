@@ -90,7 +90,7 @@ func (t *TTLCollection) Execute(ctx context.Context, client *mongo.Client) error
 		if err != nil {
 			return errors.Wrap(err, "getting next TTL")
 		}
-		grip.Infof("TTL corresponds to '%s'", now.Add(-nextTTL).Format(time.DateTime))
+		grip.Infof(ctx, "TTL corresponds to '%s'", now.Add(-nextTTL).Format(time.DateTime))
 
 		res := client.Database(t.database).RunCommand(ctx, bson.D{
 			{Key: "collMod", Value: t.collection},

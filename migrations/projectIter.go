@@ -54,7 +54,7 @@ func forEachProject(ctx context.Context, client *mongo.Client, database string, 
 		q := bson.M{}
 		if collInfo.startAtID != "" {
 			q["_id"] = bson.M{"$gte": collInfo.startAtID}
-			grip.Infof("Starting at project '%s' in collection '%s'\n", collInfo.startAtID, collInfo.name)
+			grip.Infof(ctx, "Starting at project '%s' in collection '%s'\n", collInfo.startAtID, collInfo.name)
 		}
 		// Sort by _id to iterate in a predictable order. This makes it easier to
 		// resume from a specific project if the migration fails partway through.
@@ -69,7 +69,7 @@ func forEachProject(ctx context.Context, client *mongo.Client, database string, 
 
 		for cur.Next(ctx) {
 			if projectLimit > 0 && numProjectsProcessed >= projectLimit {
-				grip.Infof("Reached limit of %d projects to process, stopping job execution.\n", projectLimit)
+				grip.Infof(ctx, "Reached limit of %d projects to process, stopping job execution.\n", projectLimit)
 				return nil
 			}
 
