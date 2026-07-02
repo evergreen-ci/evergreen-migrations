@@ -121,8 +121,8 @@ github.com/evergreen-ci/bond v0.0.0-20260326192958-a16b1d604e29 h1:T1T2WADptmAyc
 github.com/evergreen-ci/bond v0.0.0-20260326192958-a16b1d604e29/go.mod h1:fDobXgTtNcBIRr23aHYH60iWPzFF/ZOg6FfWLVQE6ZM=
 github.com/evergreen-ci/certdepot v0.0.0-20260326190252-5ab5e35f6cb7 h1:Sg7vxkrwplBA6M5D1Y4Q49CKEnzmhkfgalLXEkiRpK8=
 github.com/evergreen-ci/certdepot v0.0.0-20260326190252-5ab5e35f6cb7/go.mod h1:+j7L0jgzpxAZbGcZPjyFporVe3L+GMtcIozz+fEETVw=
-github.com/evergreen-ci/evergreen v0.0.0-20260626175129-709065c125df h1:LsT1CW3kDWLm8bINPHtFMwaiH6JOfcqfISpAggMRmlw=
-github.com/evergreen-ci/evergreen v0.0.0-20260626175129-709065c125df/go.mod h1:0mLYFftw2Gfl2vvARJFck9iVjRrk1xllpFrKSkIDISE=
+github.com/evergreen-ci/evergreen v0.0.0-20260702171251-e1eddd53b1c2 h1:C7GCPhZCiLqaFPNq8JUMyUxsL8qF7ncYD1qb3VmxiP8=
+github.com/evergreen-ci/evergreen v0.0.0-20260702171251-e1eddd53b1c2/go.mod h1:2b5qnOkvYDCSdoPlSgKbV6QDzC4EI1ve03cvYatFoP4=
 github.com/evergreen-ci/gimlet v0.0.0-20260520162532-2cfc3356800c h1:kjp/FNcNans+QVr3MSwm41q8HO4P+ljoJ/yBM7yk1BY=
 github.com/evergreen-ci/gimlet v0.0.0-20260520162532-2cfc3356800c/go.mod h1:RdfVAdxbLBKOCq9t4bgL3GnJH5TbRwG8n8jgb39NFuU=
 github.com/evergreen-ci/lru v0.0.0-20260326190734-0d627bf39810 h1:Q+MNMS3rHQw6bGJ0oZ6y1mCFBkG05ITreLfvjtdXo58=
@@ -184,6 +184,8 @@ github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aN
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 h1:NmZ1PKzSTQbuGHw9DGPFomqkkLWMC+vZCkfs+FHv1Vg=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3/go.mod h1:zQrxl1YP88HQlA6i9c63DSVPFklWpGX4OWAc9bFuaH4=
+github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
+github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/jpillora/backoff v1.0.0 h1:uvFg412JmmHBHw7iwprIxkPMI+sGQ4kzOWsMeHnm2EA=

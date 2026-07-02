@@ -3,7 +3,7 @@ module github.com/evergreen-ci/evergreen-migrations
 go 1.24.9
 
 require (
-	github.com/evergreen-ci/evergreen v0.0.0-20260626175129-709065c125df
+	github.com/evergreen-ci/evergreen v0.0.0-20260702171251-e1eddd53b1c2
 	github.com/mongodb/anser v0.0.0-20260326191204-f2d0a92e3f0a
 	github.com/mongodb/grip v0.0.0-20260416142205-66006126eeab
 	github.com/pkg/errors v0.9.1
@@ -87,6 +87,7 @@ require (
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/klauspost/compress v1.18.3 // indirect
