@@ -44,12 +44,16 @@ func (c *redactWebhookEventSecrets) Execute(ctx context.Context, client *mongo.C
 }
 
 func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.Context, client *mongo.Client, projectID string, eventLimit int) error {
-	grip.Infof("Redacting webhook secrets from events for project: %s\n", projectID)
+	grip.Infof(ctx, "Redacting webhook secrets from events for project: %s\n", projectID)
 
 	query := bson.M{
 		event.ResourceIdKey:   projectID,
 		event.ResourceTypeKey: event.EventResourceTypeProject,
-		eventTypeKey:          event.EventTypeProjectModified,
+		eventTypeKey: bson.M{"$in": []string{
+			event.EventTypeProjectModified,
+			event.EventTypeProjectAttachedToRepo,
+			event.EventTypeProjectDetachedFromRepo,
+		}},
 	}
 
 	findOpts := options.Find().SetSort(bson.M{event.TimestampKey: 1})
@@ -80,8 +84,7 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 			continue
 		}
 
-		redactWebhookSecretsFromSubscriptions(eventData.Before.Subscriptions)
-		redactWebhookSecretsFromSubscriptions(eventData.After.Subscriptions)
+		eventData.RedactSecrets()
 
 		result, err := client.Database(c.database).Collection(event.EventCollection).UpdateOne(ctx,
 			bson.M{eventIDKey: e.ID},
@@ -98,31 +101,9 @@ func (c *redactWebhookEventSecrets) redactWebhookSecretsForProject(ctx context.C
 		return errors.Wrap(err, "iterating over project modification events")
 	}
 
-	grip.Infof("Finished redacting webhook secrets for project '%s': found %d events, updated %d events.\n", projectID, numEventsFound, numEventsUpdated)
+	grip.Infof(ctx, "Finished redacting webhook secrets for project '%s': found %d events, updated %d events.\n", projectID, numEventsFound, numEventsUpdated)
 
 	return nil
-}
-
-// redactWebhookSecretsFromSubscriptions zeroes out the secret and removes the
-// Authorization header from all webhook subscriptions in the slice.
-func redactWebhookSecretsFromSubscriptions(subscriptions []event.Subscription) {
-	for i := range subscriptions {
-		if subscriptions[i].Subscriber.Type != event.EvergreenWebhookSubscriberType {
-			continue
-		}
-		webhookSub, ok := subscriptions[i].Subscriber.Target.(*event.WebhookSubscriber)
-		if !ok || webhookSub == nil {
-			continue
-		}
-		webhookSub.Secret = nil
-		filtered := make([]event.WebhookHeader, 0, len(webhookSub.Headers))
-		for _, h := range webhookSub.Headers {
-			if h.Key != "Authorization" {
-				filtered = append(filtered, h)
-			}
-		}
-		webhookSub.Headers = filtered
-	}
 }
 
 // hasWebhookSecretsToRedact returns true if any of the given subscriptions are

@@ -61,7 +61,7 @@ func (c *redactProjectEventSecrets) Execute(ctx context.Context, client *mongo.C
 }
 
 func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client *mongo.Client, projectID string, eventLimit int) error {
-	grip.Infof("Redacting project vars from events for project: %s\n", projectID)
+	grip.Infof(ctx, "Redacting project vars from events for project: %s\n", projectID)
 
 	projModificationEventsQuery := bson.M{
 		event.ResourceIdKey:   projectID,
@@ -92,8 +92,7 @@ func (c *redactProjectEventSecrets) redactForProject(ctx context.Context, client
 		afterGitHubAppAuth := originalEventData.After.GitHubAppAuth.PrivateKey
 
 		// Redact the project secrets from the event.
-		changeEvent := model.ProjectChangeEvents{e}
-		changeEvent.RedactSecrets()
+		originalEventData.RedactSecrets()
 
 		eventData, ok := e.Data.(*model.ProjectChangeEvent)
 		if !ok {

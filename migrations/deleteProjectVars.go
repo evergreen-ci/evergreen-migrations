@@ -44,7 +44,7 @@ func (d *deleteProjectVars) Execute(ctx context.Context, client *mongo.Client) e
 	}
 
 	for _, id := range ids {
-		grip.Infof("Deleting project vars for project with ID '%s'", id)
+		grip.Infof(ctx, "Deleting project vars for project with ID '%s'", id)
 		if _, err := client.Database(d.database).Collection(model.ProjectVarsCollection).UpdateByID(ctx, id, bson.M{
 			"$unset": bson.M{
 				"vars": 1,
